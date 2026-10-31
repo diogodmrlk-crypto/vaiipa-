@@ -52,14 +52,15 @@ jobs:
       - name: Build
         run: |
           export THEOS="$HOME/theos"
-          make package FINALPACKAGE=1 2>&1
+          make 2>&1
+
+      - name: Locate dylib
+        run: find .theos/obj -name "*.dylib" | tee dylib_path.txt
 
       - name: Upload dylib
         uses: actions/upload-artifact@v4
         with:
           name: FFCheat
-          path: |
-            .theos/obj/FFCheat.dylib
-            packages/*.deb
-          if-no-files-found: warn
+          path: .theos/obj/**/*.dylib
+          if-no-files-found: error
           retention-days: 7
