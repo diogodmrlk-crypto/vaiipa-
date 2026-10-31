@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y clang lld curl git zip xz-utils fakeroot
+          sudo apt-get install -y clang lld curl git zip xz-utils fakeroot file
 
       - name: Install Theos
         run: |
@@ -27,8 +27,16 @@ jobs:
       - name: Download iPhoneOS SDK
         run: |
           mkdir -p "$HOME/theos/sdks"
-          curl -L "https://github.com/theos/sdks/releases/download/1700/iPhoneOS16.5.sdk.tar.xz" \
-               -o sdk.tar.xz
+          SDK="iPhoneOS16.5.sdk.tar.xz"
+
+          curl -L --fail \
+            "https://github.com/theos/sdks/releases/latest/download/$SDK" \
+            -o sdk.tar.xz \
+          || curl -L --fail \
+            "https://github.com/nickchan9/theos-sdks/releases/download/v1/$SDK" \
+            -o sdk.tar.xz
+
+          file sdk.tar.xz | grep -q "XZ compressed" || { echo "SDK download falhou"; exit 1; }
           tar -xf sdk.tar.xz -C "$HOME/theos/sdks"
           rm sdk.tar.xz
 
