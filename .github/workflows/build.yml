@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y clang lld curl git zip xz-utils fakeroot
+          sudo apt-get install -y clang lld curl git zip xz-utils fakeroot file
 
       - name: Install Theos
         run: |
@@ -27,10 +27,27 @@ jobs:
       - name: Download iPhoneOS SDK
         run: |
           mkdir -p "$HOME/theos/sdks"
-          curl -L "https://github.com/theos/sdks/releases/download/1700/iPhoneOS16.5.sdk.tar.xz" \
-               -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C "$HOME/theos/sdks"
-          rm sdk.tar.xz
+
+          SDK_URL=$(curl -s https://api.github.com/repos/theos/sdks/releases/latest \
+            | grep "browser_download_url" \
+            | grep -i "iPhoneOS" \
+            | head -1 \
+            | cut -d '"' -f 4)
+
+          echo "SDK URL: $SDK_URL"
+
+          if [ -z "$SDK_URL" ]; then
+            echo "API não retornou URL — clonando repo"
+            git clone --depth 1 https://github.com/theos/sdks.git /tmp/theos-sdks
+            cp -r /tmp/theos-sdks/*.sdk "$HOME/theos/sdks/" 2>/dev/null || true
+          else
+            curl -L --fail "$SDK_URL" -o sdk.tar.xz
+            file sdk.tar.xz
+            tar -xf sdk.tar.xz -C "$HOME/theos/sdks"
+            rm sdk.tar.xz
+          fi
+
+          ls "$HOME/theos/sdks/"
 
       - name: Build
         run: |
