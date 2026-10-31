@@ -1,0 +1,53 @@
+name: Build FFCheat
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-13          # macos-latest pode ser ARM — use 13 por compat SDK
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install ldid xz
+
+      - name: Install Theos
+        run: |
+          export THEOS="$HOME/theos"
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+
+      - name: Download iPhoneOS SDK
+        run: |
+          # SDK 16.5 — funciona para target 14.0+
+          SDK_URL="https://github.com/theos/sdks/releases/download/1700/iPhoneOS16.5.sdk.tar.xz"
+          curl -L "$SDK_URL" -o sdk.tar.xz
+          mkdir -p "$HOME/theos/sdks"
+          tar -xf sdk.tar.xz -C "$HOME/theos/sdks"
+
+      - name: Install CydiaSubstrate headers
+        run: |
+          # substrate.h para linking
+          curl -L "https://github.com/theos/theos/raw/master/vendor/include/substrate.h" \
+               -o "$HOME/theos/vendor/include/substrate.h" || true
+
+      - name: Build
+        run: |
+          export THEOS="$HOME/theos"
+          make package FINALPACKAGE=1 2>&1
+
+      - name: Upload dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: FFCheat-dylib
+          path: |
+            .theos/obj/FFCheat.dylib
+            packages/*.deb
+          if-no-files-found: warn
+          retention-days: 7
