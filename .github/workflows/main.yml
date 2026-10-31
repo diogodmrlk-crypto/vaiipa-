@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13          # macos-latest pode ser ARM — use 13 por compat SDK
+     runs-on: macos-latest      # macos-latest pode ser ARM — use 13 por compat SDK
 
     steps:
       - name: Checkout
